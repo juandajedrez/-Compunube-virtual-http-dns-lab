@@ -75,13 +75,15 @@
     <label for="host">Nombre del host</label>
     <input type="text" id="host" name="host" placeholder="Ej. paisajes">
 
+    <button onclick="crear()"> aceptar </button>
+
     <label for="contenido">Contenido web (comprimido)</label>
     <input type="file" id="contenido" name="contenido" accept=".zip,.tar.gz">
 
     <button onclick="publicar()">Publicar servicio</button>
 
     <div class="dashboard">
-      <h3>Instancias</h3>
+      <h3>Registro de actividad</h3>
       <table id="tablaInstancias">
         <thead>
           <tr>
@@ -89,6 +91,7 @@
             <th>IP</th>
             <th>Enlace</th>
             <th>Fecha de creación</th>
+            <th> </th>
           </tr>
         </thead>
         <tbody>
@@ -99,6 +102,33 @@
   </div>
 
   <script>
+    async function crear(){
+      const host = document.getElementById('host').value;
+
+      if (!host) {
+        alert("Por favor ingresa un nombre de host y selecciona un archivo.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("host", host);
+
+      try {
+        const response = await fetch("/crear", {
+          method: "POST",
+          body: formData
+        });
+
+        const resultado = await response.json();
+        if (resultado.exito) {
+          print("envio correcto")
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("No se pudo crear el servidor");
+      }
+
+    }
     async function publicar() {
       const host = document.getElementById('host').value;
       const archivo = document.getElementById('contenido').files[0];
@@ -120,7 +150,7 @@
 
         const resultado = await response.json();
         if (resultado.exito) {
-          agregarInstancia(resultado.host, resultado.ip, resultado.url);
+          agregarInstancia(resultado.host, resultado.ip, resultado.url,resultado.fecha);
         } else {
           alert("Error al aprovisionar: " + resultado.mensaje);
         }
@@ -130,7 +160,7 @@
       }
     }
 
-    function agregarInstancia(host, ip, url) {
+    function agregarInstancia(host, ip, url,fecha) {
       const tabla = document.getElementById("tablaInstancias").querySelector("tbody");
       const fila = document.createElement("tr");
 
@@ -138,9 +168,36 @@
         <td>${host}</td>
         <td>${ip}</td>
         <td><a href="${url}" target="_blank">Ver página</a></td>
+        <td>${fecha}</td>
+        <td> <button onclick="eliminarFila(this)"> Eliminar </button> </td>
       `;
 
       tabla.appendChild(fila);
+    }
+
+    function eliminarFila(boton) {
+      const fila = boton.closest("tr");
+      const host = fila.cells[0].textContent;
+      const ip = fila.cells[1].textContent;
+      const url = fila.cells[2].querySelector("a").href;
+
+      // Aquí puedes hacer lo que necesites con los datos
+      console.log("Eliminando instancia:");
+      console.log("Host:", host);
+      console.log("IP:", ip);
+      console.log("URL:", url);
+
+      // Eliminar visualmente la fila
+      fila.remove();
+
+      // Opcional: enviar solicitud al backend para eliminar la instancia
+      fetch("/eliminar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host, ip, url })
+      }).then(res => res.json())
+        .then(data => console.log("Respuesta del servidor:", data));
+      
     }
   </script>
 </body>
