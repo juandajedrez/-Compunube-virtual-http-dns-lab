@@ -10,9 +10,27 @@ import (
 )
 
 type Instancia struct {
-	Host string `json:"host"`
-	IP   string `json:"ip"`
-	URL  string `json:"url"`
+	Host  string `json:"host"`
+	IP    string `json:"ip"`
+	URL   string `json:"url"`
+	Fecha string `json:"fecha"`
+}
+
+func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodPost {
+		host := r.FormValue("host")
+
+		if host == "" {
+			//necesito veriifcar que no haya otro hostname con el mismo nombre
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		//script creación maquina virtual
+
+		//solicitud al dns (Bind) con host
+
+	}
 }
 
 func publicarHandler(w http.ResponseWriter, r *http.Request) {
@@ -44,20 +62,21 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(out, file)
 
 	// Simular aprovisionamiento de VM
-	//obtener IP y url
-	ip := "192.168.1.100"                // de prueba
+	//obtener ip
+	ip := "192.168.1.100" // de prueba
+	//obtener url
 	url := fmt.Sprintf("http://%s/", ip) // de prueba
+	//obtener fecha
+	fecha := "10-10-2010 17:02:02" //de prueba
 
-	// Crear maquina virtual con apache y enviar archivo .zip
-	//SCP Y SSH
-
-	// DNS
+	// Solicitar maquina virtual por host y mandar el .zip con SCP Y SSH
 
 	// Responder al frontend
 	instancia := Instancia{
-		Host: host,
-		IP:   ip,
-		URL:  url,
+		Host:  host,
+		IP:    ip,
+		URL:   url,
+		Fecha: fecha,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -65,11 +84,12 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 		"host":  instancia.Host,
 		"ip":    instancia.IP,
 		"url":   instancia.URL,
+		"fecha": instancia.Fecha,
 	})
 }
 
 func eliminarHandler(w http.ResponseWriter, r *http.Request) {
-
+	//script para eliminar maquina virtual o solo .zip?
 }
 
 func main() {
@@ -78,6 +98,7 @@ func main() {
 		http.ServeFile(w, r, "templates/interfaz_principal.html")
 	})
 
+	http.HandleFunc("/crear", solicitaciónHnandler)
 	http.HandleFunc("/publicar", publicarHandler)
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 	http.HandleFunc("/eliminar", eliminarHandler)
