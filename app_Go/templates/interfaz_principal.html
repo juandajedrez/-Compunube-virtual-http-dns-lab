@@ -119,10 +119,6 @@
           body: formData
         });
 
-        const resultado = await response.json();
-        if (resultado.exito) {
-          print("envio correcto")
-        }
       } catch (error) {
         console.error("Error:", error);
         alert("No se pudo crear el servidor");

@@ -24,6 +24,7 @@ func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
 
 		if host == "" {
 			//necesito veriifcar que no haya otro hostname con el mismo nombre
+
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
