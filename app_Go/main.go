@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Instancia struct {
@@ -23,6 +24,7 @@ func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
 
 		if host == "" {
 			//necesito veriifcar que no haya otro hostname con el mismo nombre
+
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
@@ -67,7 +69,7 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 	//obtener url
 	url := fmt.Sprintf("http://%s/", ip) // de prueba
 	//obtener fecha
-	fecha := "10-10-2010 17:02:02" //de prueba
+	fecha := time.Now().Format("2006-01-02 15:04:05") //de prueba
 
 	// Solicitar maquina virtual por host y mandar el .zip con SCP Y SSH
 
@@ -89,6 +91,7 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func eliminarHandler(w http.ResponseWriter, r *http.Request) {
+
 	//script para eliminar maquina virtual o solo .zip?
 }
 
