@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Servicios Web</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eef2f5;
+      padding: 40px;
+    }
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    .dashboard {
+      margin-top: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    a {
+      color: #0078D7;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Gestión de páginas y aplicaciones web</h2>
+
+    <label for="host">Nombre del host</label>
+    <input type="text" id="host" name="host" placeholder="Ej. paisajes">
+
+    <label for="contenido">Contenido web (comprimido)</label>
+    <input type="file" id="contenido" name="contenido" accept=".zip,.tar.gz">
+
+    <button onclick="publicar()">Publicar servicio</button>
+
+    <div class="dashboard">
+      <h3>Instancias</h3>
+      <table id="tablaInstancias">
+        <thead>
+          <tr>
+            <th>Host</th>
+            <th>IP</th>
+            <th>Enlace</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Se llenará dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    async function publicar() {
+      const host = document.getElementById('host').value;
+      const archivo = document.getElementById('contenido').files[0];
+
+      if (!host || !archivo) {
+        alert("Por favor ingresa un nombre de host y selecciona un archivo.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("host", host);
+      formData.append("contenido", archivo);
+
+      try {
+        const response = await fetch("/publicar", {
+          method: "POST",
+          body: formData
+        });
+
+        const resultado = await response.json();
+        if (resultado.exito) {
+          agregarInstancia(resultado.host, resultado.ip, resultado.url);
+        } else {
+          alert("Error al aprovisionar: " + resultado.mensaje);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("No se pudo conectar con el servidor.");
+      }
+    }
+
+    function agregarInstancia(host, ip, url) {
+      const tabla = document.getElementById("tablaInstancias").querySelector("tbody");
+      const fila = document.createElement("tr");
+
+      fila.innerHTML = `
+        <td>${host}</td>
+        <td>${ip}</td>
+        <td><a href="${url}" target="_blank">Ver página</a></td>
+      `;
+
+      tabla.appendChild(fila);
+    }
+  </script>
+</body>
+</html>
