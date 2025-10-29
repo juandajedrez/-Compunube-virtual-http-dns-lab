@@ -29,7 +29,11 @@ Simulación de una plataforma HTTP como servicio (HTTPaaS) en entorno local, uti
 ## 📚 Créditos
 
 Proyecto académico Universidad del Quindío
+
 desarrollado en el curso *Computación en la Nube 2025-2*
+
 Profesores: Carlos Eduardo Gómez Montoya – Juan Sebastián Salazar Osorio  
+
 Desarrolladores: [Jhan Carlos Martinez](https://github.com/KJahn26) - [Juan David Guzman](https://github.com/juandajedrez)
+
 Asistencia técnica: [Microsoft Copilot](https://copilot.microsoft.com)
