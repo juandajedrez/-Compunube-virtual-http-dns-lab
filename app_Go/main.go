@@ -1,17 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
-
-	"golang.org/x/crypto/ssh"
 )
 
 type Instancia struct {
@@ -21,57 +19,16 @@ type Instancia struct {
 	Fecha string `json:"fecha"`
 }
 
-func ejecucionSccript(ip, usuario, clavePrivada, script, rutaZip string) error {
-	// 1. Enviar el archivo ZIP por SCP
-	scpCmd := exec.Command("scp", "-i", clavePrivada, rutaZip, fmt.Sprintf("%s@%s:/tmp/sitio_usuario.zip", usuario, ip))
-	scpOut, err := scpCmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("error al enviar ZIP por SCP: %v\nSalida: %s", err, string(scpOut))
-	}
-	fmt.Println("ZIP enviado correctamente")
+func despliegue(zipPath, ip string) {
 
-	// 2. Leer clave privada
-	key, err := ioutil.ReadFile(clavePrivada)
-	if err != nil {
-		return fmt.Errorf("error leyendo clave privada: %v", err)
-	}
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-		return fmt.Errorf("error al parsear clave privada: %v", err)
-	}
+	// Si usas Git Bash o WSL
+	cmd := exec.Command("bash", "./deploy.sh", zipPath, ip)
 
-	// 3. Configurar cliente SSH
-	config := &ssh.ClientConfig{
-		User: usuario,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         30 * time.Second,
-	}
-
-	// 4. Conectar y ejecutar el script remoto
-	conn, err := ssh.Dial("tcp", ip+":22", config)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error al conectar por SSH: %v", err)
+		fmt.Println("Error ejecutando script:", err)
 	}
-	defer conn.Close()
-
-	session, err := conn.NewSession()
-	if err != nil {
-		return fmt.Errorf("error al crear sesión SSH: %v", err)
-	}
-	defer session.Close()
-
-	cmd := fmt.Sprintf("bash %s %s", script, ip)
-	output, err := session.CombinedOutput(cmd)
-	if err != nil {
-		return fmt.Errorf("error al ejecutar script remoto: %v\nSalida: %s", err, string(output))
-	}
-
-	fmt.Println("Script ejecutado correctamente")
 	fmt.Println(string(output))
-	return nil
 }
 
 func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +42,6 @@ func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
-		//script creación maquina virtual
 
 		//solicitud al dns (Bind) con host
 
@@ -122,13 +78,22 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Simular aprovisionamiento de VM
 	//obtener ip
-	ip := "192.168.1.100" // de prueba
+	ip := "192.168.80.12" // de prueba
 	//obtener url
 	url := fmt.Sprintf("http://%s/", ip) // de prueba
 	//obtener fecha
 	fecha := time.Now().Format("2006-01-02 15:04:05") //de prueba
+	/*
+		// Solicitar maquina virtual por host y obtener el ip
+		cmd := exec.Command("cmd", "/C", "Scripts\\library\\New_VM.py")
+		var out_bytes bytes.Buffer
+		cmd.Stdout = &out_bytes // capturamos errores
+		error := cmd.Run()
+		if error != nil {
+			print("error creando maquina virtual")
+		}*/
 
-	// Solicitar maquina virtual por host y mandar el .zip con SCP Y SSH
+	despliegue(filePath, ip)
 
 	// Responder al frontend
 	instancia := Instancia{
@@ -149,7 +114,15 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 
 func eliminarHandler(w http.ResponseWriter, r *http.Request) {
 
-	//script para eliminar maquina virtual o solo .zip?
+	//script para eliminar maquina virtual
+	cmd := exec.Command("cmd", "/C", "Scripts\\library\\New_VM.py")
+	var out_bytes bytes.Buffer
+	cmd.Stdout = &out_bytes // capturamos errores
+	err := cmd.Run()
+
+	if err != nil {
+		print("error borrando maquina")
+	}
 }
 
 func main() {
@@ -163,6 +136,7 @@ func main() {
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 	http.HandleFunc("/eliminar", eliminarHandler)
 
-	fmt.Println("Servidor escuchando en http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Servidor escuchando en http://localhost:8088")
+	http.ListenAndServe(":8088", nil)
+
 }
