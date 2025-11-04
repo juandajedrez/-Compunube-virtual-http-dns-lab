@@ -1,50 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Gestión de Servicios Web</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #eef2f5;
+      background: #eef2f5;
       padding: 40px;
     }
     .container {
-      background-color: #fff;
+      background: #fff;
       padding: 30px;
-      border-radius: 8px;
-      max-width: 600px;
+      border-radius: 10px;
+      max-width: 700px;
       margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
     }
     h2 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
     }
     label {
       display: block;
-      margin-top: 20px;
+      margin-top: 15px;
       font-weight: bold;
     }
     input[type="text"],
     input[type="file"] {
       width: 100%;
       padding: 10px;
-      margin-top: 8px;
+      margin-top: 5px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 5px;
     }
     button {
-      margin-top: 20px;
+      margin-top: 15px;
       padding: 10px 20px;
-      background-color: #0078D7;
-      color: white;
       border: none;
-      border-radius: 4px;
+      background: #0078d7;
+      color: #fff;
+      border-radius: 5px;
       cursor: pointer;
     }
     button:hover {
-      background-color: #005fa3;
+      background: #005fa3;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     .dashboard {
       margin-top: 40px;
@@ -55,145 +59,186 @@
       margin-top: 10px;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ccc;
+      padding: 10px;
       text-align: left;
     }
     th {
-      background-color: #f0f0f0;
+      background: #f5f5f5;
     }
-    a {
-      color: #0078D7;
-      text-decoration: none;
+    #mensajes {
+      margin-top: 20px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Gestión de páginas y aplicaciones web</h2>
+    <h2>Gestión de Páginas y Aplicaciones Web</h2>
 
+    <!-- Paso 1: Crear la VM -->
     <label for="host">Nombre del host</label>
-    <input type="text" id="host" name="host" placeholder="Ej. paisajes">
+    <input type="text" id="host" placeholder="Ej. tienda">
+    <button onclick="crearVM()">Aceptar (crear VM)</button>
 
-    <button onclick="crear()"> aceptar </button>
+    <!-- Paso 2: Subir archivo -->
+    <label for="contenido">Archivo del sitio (ZIP)</label>
+    <input type="file" id="contenido" accept=".zip">
 
-    <label for="contenido">Contenido web (comprimido)</label>
-    <input type="file" id="contenido" name="contenido" accept=".zip,.tar.gz">
+    <!-- Paso 3: Publicar -->
+    <button id="btnPublicar" onclick="publicar()" disabled>Publicar servicio</button>
 
-    <button onclick="publicar()">Publicar servicio</button>
+    <div id="mensajes"></div>
 
+    <!-- Registro -->
     <div class="dashboard">
-      <h3>Registro de actividad</h3>
+      <h3>Registro de servicios desplegados</h3>
       <table id="tablaInstancias">
         <thead>
           <tr>
             <th>Host</th>
             <th>IP</th>
             <th>Enlace</th>
-            <th>Fecha de creación</th>
-            <th> </th>
+            <th>Fecha</th>
+            <th>Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- Se llenará dinámicamente -->
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
 
   <script>
-    async function crear(){
-      const host = document.getElementById('host').value;
+    let ultimaIP = "";
+    let ultimoHost = "";
 
+    function mostrarMensaje(msg, ok=true) {
+      const div = document.getElementById("mensajes");
+      div.style.color = ok ? "green" : "red";
+      div.textContent = msg;
+    }
+
+    //
+    async function crearVM() {
+      const host = document.getElementById("host").value.trim();
       if (!host) {
-        alert("Por favor ingresa un nombre de host y selecciona un archivo.");
+        alert("Debes ingresar un nombre de host.");
         return;
       }
 
-      const formData = new FormData();
-      formData.append("host", host);
-
+      mostrarMensaje("Creando máquina virtual...");
       try {
-        const response = await fetch("/crear", {
-          method: "POST",
-          body: formData
-        });
+        const form = new FormData();
+        form.append("host", host);
 
-      } catch (error) {
-        console.error("Error:", error);
-        alert("No se pudo crear el servidor");
+        const resp = await fetch("/crear", { method: "POST", body: form });
+        const data = await resp.json();
+
+        if (data.exito) {
+          ultimaIP = data.ip;
+          ultimoHost = host;
+          document.getElementById("btnPublicar").disabled = false;
+          mostrarMensaje(`Máquina ${host} creada con IP ${data.ip}. Listo para publicar.`);
+          //mostrarMensaje(`Máquina ${host} creada con IP ${data.ip}`);
+         // agregarFila(host, data.ip, `http://${data.ip}/`, data.fecha);
+        } else {
+          mostrarMensaje("Error al crear la VM: " + data.mensaje, false);
+        }
+      } catch (err) {
+        mostrarMensaje("Error en la creación: " + err.message, false);
       }
-
     }
+
     async function publicar() {
-      const host = document.getElementById('host').value;
-      const archivo = document.getElementById('contenido').files[0];
+      const host = document.getElementById("host").value.trim();
+      const archivo = document.getElementById("contenido").files[0];
 
       if (!host || !archivo) {
-        alert("Por favor ingresa un nombre de host y selecciona un archivo.");
+        alert("Debes ingresar un host y seleccionar un archivo ZIP.");
         return;
       }
 
-      const formData = new FormData();
-      formData.append("host", host);
-      formData.append("contenido", archivo);
+      if (host !== ultimoHost || !ultimaIP) {
+        alert("Primero debes crear la VM con el botón 'Aceptar'.");
+        return;
+      }
+
+      mostrarMensaje("Publicando sitio web en la VM...");
 
       try {
-        const response = await fetch("/publicar", {
-          method: "POST",
-          body: formData
-        });
+        // ... (Código para preparar el form)
 
-        const resultado = await response.json();
-        if (resultado.exito) {
-          agregarInstancia(resultado.host, resultado.ip, resultado.url,resultado.fecha);
-        } else {
-          alert("Error al aprovisionar: " + resultado.mensaje);
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        alert("No se pudo conectar con el servidor.");
-      }
-    }
+        // 🚨 Paso intermedio: Si la fila no existe (solo se creó la VM), 
+        // la agregamos con el valor de IP antes de publicar (opcional, para feedback).
+        // Sin embargo, lo más limpio es añadirla directamente con el resultado FINAL.
 
-    function agregarInstancia(host, ip, url,fecha) {
-      const tabla = document.getElementById("tablaInstancias").querySelector("tbody");
-      const fila = document.createElement("tr");
+        const resp = await fetch("/publicar", { method: "POST", body: form });
+        const resData = await resp.json(); // Cambiado a resData para evitar conflicto con 'data' de la respuesta
 
-      fila.innerHTML = `
+        if (resData.exito) {
+          // La respuesta final ahora tiene la URL con el FQDN
+          const data = resData.datos; 
+          
+          // 🚨 AGREGAMOS/ACTUALIZAMOS LA FILA AQUÍ, DESPUÉS DEL DNS
+          actualizarFila(data.Host, data.IP, data.URL, data.Fecha);
+
+          mostrarMensaje(`Sitio publicado correctamente. Enlace: ${data.URL}`);
+
+          // Desactivar el botón para forzar una nueva VM o un nuevo "Aceptar"
+          document.getElementById("btnPublicar").disabled = true;
+
+        } else {
+          mostrarMensaje("Error al publicar: " + resData.mensaje, false);
+        }
+      } catch (err) {
+        mostrarMensaje("Error en la publicación: " + err.message, false);
+      }
+    }
+
+    function agregarFila(host, ip, url, fecha) {
+      const tbody = document.querySelector("#tablaInstancias tbody");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
         <td>${host}</td>
         <td>${ip}</td>
-        <td><a href="${url}" target="_blank">Ver página</a></td>
+        <td><a href="${url}" target="_blank">${url}</a></td>
         <td>${fecha}</td>
-        <td> <button onclick="eliminarFila(this)"> Eliminar </button> </td>
+        <td><button onclick="eliminarFila(this)">Eliminar</button></td>
       `;
-
-      tabla.appendChild(fila);
+      tbody.appendChild(tr);
     }
 
-    function eliminarFila(boton) {
-      const fila = boton.closest("tr");
+    function actualizarFila(host, ip, url, fecha) {
+      const filas = document.querySelectorAll("#tablaInstancias tbody tr");
+      for (let f of filas) {
+        if (f.cells[0].textContent === host) {
+          f.cells[1].textContent = ip;
+          f.cells[2].innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+          f.cells[3].textContent = fecha;
+          return;
+        }
+      }
+      agregarFila(host, ip, url, fecha);
+    }
+
+    function eliminarFila(btn) {
+      const fila = btn.closest("tr");
       const host = fila.cells[0].textContent;
       const ip = fila.cells[1].textContent;
-      const url = fila.cells[2].querySelector("a").href;
 
-      // Aquí puedes hacer lo que necesites con los datos
-      console.log("Eliminando instancia:");
-      console.log("Host:", host);
-      console.log("IP:", ip);
-      console.log("URL:", url);
+      if (!confirm(`¿Eliminar el servicio ${host}?`)) return;
 
-      // Eliminar visualmente la fila
-      fila.remove();
-
-      // Opcional: enviar solicitud al backend para eliminar la instancia
       fetch("/eliminar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, ip, url })
-      }).then(res => res.json())
-        .then(data => console.log("Respuesta del servidor:", data));
-      
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({host, ip})
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.exito) fila.remove();
+        else alert("Error al eliminar: " + data.mensaje);
+      })
+      .catch(err => alert("Error: " + err.message));
     }
   </script>
 </body>

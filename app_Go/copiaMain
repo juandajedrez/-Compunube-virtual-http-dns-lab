@@ -266,7 +266,7 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 	instancia := Instancia{
 		Host:  host,
 		IP:    ip,
-		URL:   fmt.Sprintf("http://%s.cloud.lab/", host), //cambios aqui
+		URL:   fmt.Sprintf("http://%s/", ip),
 		Fecha: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
