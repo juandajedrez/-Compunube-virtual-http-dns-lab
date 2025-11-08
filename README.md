@@ -24,7 +24,6 @@ Simulación de una plataforma HTTP como servicio (HTTPaaS) en entorno local, uti
 - Apache2
 - Bind9
 - Golang 1.20+
-- Scripts de automatización (Python)
 
 ## 🔝 Mejoras (Propuestas)
 - Utilizar dos redes internas para simulación de la infraestructura
