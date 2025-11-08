@@ -36,7 +36,7 @@ Simulación de una plataforma HTTP como servicio (HTTPaaS) en entorno local, uti
 
 ## Documentación
 - [Informe entregado al docente]()
-- [Videos explicativos]()
+- [Videos explicativos](https://www.youtube.com/playlist?list=PLHbql5VXrmE6b8LAHWJ8gokLxsPSM2Xkj)
 - [Informe de pruebas realizadas]()
 - [Registro de comandos utilizados]()
 
