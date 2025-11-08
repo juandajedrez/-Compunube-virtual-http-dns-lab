@@ -26,6 +26,20 @@ Simulación de una plataforma HTTP como servicio (HTTPaaS) en entorno local, uti
 - Golang 1.20+
 - Scripts de automatización (Python)
 
+## 🔝 Mejoras (Propuestas)
+- Utilizar dos redes internas para simulación de la infraestructura
+- Utilizar un host intermedio con acceso a ambas redes
+- Ocultar las direcciones IP de los servidore propios hacia la red externa a ellos
+- Realizacion de pruebas al servidor
+- Utilizacion de apis para comunicacion entre cliente <-> servidor
+- Integracion de un servidor DHCP para asignacion automatica de direcciones IP
+
+## Documentación
+- [Informe entregado al docente]()
+- [Videos explicativos]()
+- [Informe de pruebas realizadas]()
+- [Registro de comandos utilizados]()
+
 ## 📚 Créditos
 
 Proyecto académico Universidad del Quindío
