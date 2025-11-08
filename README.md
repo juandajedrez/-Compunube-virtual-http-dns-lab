@@ -35,7 +35,7 @@ Simulación de una plataforma HTTP como servicio (HTTPaaS) en entorno local, uti
 - Integracion de un servidor DHCP para asignacion automatica de direcciones IP
 
 ## Documentación
-- [Informe entregado al docente]()
+- [Informe entregado al docente](https://github.com/juandajedrez/-Compunube-virtual-http-dns-lab/blob/e2bc63ad3f11115fd5073dc7e75fe61cf8fe1e94/Documentacion/HTTP%20como%20servicio%20con%20DNS.pdf)
 - [Videos explicativos](https://www.youtube.com/playlist?list=PLHbql5VXrmE6b8LAHWJ8gokLxsPSM2Xkj)
 - [Informe de pruebas realizadas]()
 - [Registro de comandos utilizados]()
