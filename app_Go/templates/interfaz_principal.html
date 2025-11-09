@@ -133,11 +133,9 @@
         alert("Por favor ingresa un nombre de host y selecciona un archivo.");
         return;
       }
-
       const formData = new FormData();
       formData.append("host", host);
       formData.append("contenido", archivo);
-
       try {
         const response = await fetch("/publicar", {
           method: "POST",

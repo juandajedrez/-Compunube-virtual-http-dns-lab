@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -31,6 +34,18 @@ func despliegue(zipPath, ip string) {
 	fmt.Println(string(output))
 }
 
+func configuracionred(ip, ipstatic string) {
+
+	// Si usas Git Bash o WSL
+	cmd := exec.Command("bash", "./configurar_red.sh", ip, ipstatic)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error ejecutando script:", err)
+	}
+	fmt.Println(string(output))
+}
+
 func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
@@ -38,13 +53,11 @@ func solicitaciónHnandler(w http.ResponseWriter, r *http.Request) {
 
 		if host == "" {
 			//necesito veriifcar que no haya otro hostname con el mismo nombre
-
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
 		//solicitud al dns (Bind) con host
-
 	}
 }
 
@@ -75,30 +88,47 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer out.Close()
 	io.Copy(out, file)
+	fecha := time.Now().Format("2006-01-02 15:04:05")
 
-	// Simular aprovisionamiento de VM
-	//obtener ip
-	ip := "192.168.80.12" // de prueba
-	//obtener url
-	url := fmt.Sprintf("http://%s/", ip) // de prueba
-	//obtener fecha
-	fecha := time.Now().Format("2006-01-02 15:04:05") //de prueba
-	/*
-		// Solicitar maquina virtual por host y obtener el ip
-		cmd := exec.Command("cmd", "/C", "Scripts\\library\\New_VM.py")
-		var out_bytes bytes.Buffer
-		cmd.Stdout = &out_bytes // capturamos errores
-		error := cmd.Run()
-		if error != nil {
-			print("error creando maquina virtual")
-		}*/
+	// Solicitar maquina virtual por host y obtener el ip
+	cmd := exec.Command("python", "Scripts\\library\\New_VM.py", host)
+	var out_bytes bytes.Buffer
+	cmd.Stdout = &out_bytes // capturamos errores
+	cmd.Stderr = &out_bytes
+	error := cmd.Run()
+	if error != nil {
+		fmt.Println("error creando maquina virtual", err)
+	}
+	fmt.Println(" Salida del script Python:\n", out_bytes.String())
+	time.Sleep(30000000000)
 
+	// Obtener la salida y limpiar espacios
+	raw := out_bytes.String()
+	raw = strings.TrimSpace(raw)
+
+	// Buscar la primera IP válida en la salida
+	re := regexp.MustCompile(`\b\d{1,3}(\.\d{1,3}){3}\b`)
+	ip := re.FindString(raw)
+
+	if ip != "" {
+		fmt.Println(" IP detectada:", ip)
+	} else {
+		fmt.Println(" No se detectó una IP válida. Salida:", raw)
+	}
+
+	fmt.Println(ip)
 	despliegue(filePath, ip)
+
+	var ipstatic = "192.168.222.3"
+	configuracionred(ip, ipstatic) //aca necesito la ip estatica
+
+	//aca necesito el diminio por el que vamos a acceder
+	url := fmt.Sprintf("http://%s/", ipstatic) //cambia ipstatic por el nombre de dominio
 
 	// Responder al frontend
 	instancia := Instancia{
 		Host:  host,
-		IP:    ip,
+		IP:    ipstatic,
 		URL:   url,
 		Fecha: fecha,
 	}
@@ -113,16 +143,31 @@ func publicarHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func eliminarHandler(w http.ResponseWriter, r *http.Request) {
-
-	//script para eliminar maquina virtual
-	cmd := exec.Command("cmd", "/C", "Scripts\\library\\New_VM.py")
-	var out_bytes bytes.Buffer
-	cmd.Stdout = &out_bytes // capturamos errores
-	err := cmd.Run()
-
-	if err != nil {
-		print("error borrando maquina")
+	// Leer JSON del cuerpo
+	var data struct {
+		Host string `json:"host"` // nombre de la VM
 	}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "Error al leer datos", http.StatusBadRequest)
+		return
+	}
+
+	// Ejecutar script con el nombre de la VM como argumento
+	cmd := exec.Command("cmd", "/C", "Scripts\\library\\Remove_VM.py", data.Host)
+	var out_bytes bytes.Buffer
+	cmd.Stdout = &out_bytes
+	cmd.Stderr = &out_bytes
+
+	err := cmd.Run()
+	if err != nil {
+		log.Println(" Error borrando máquina:", out_bytes.String())
+		http.Error(w, "Error eliminando VM", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("VM eliminada:", out_bytes.String())
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"ok"}`))
 }
 
 func main() {

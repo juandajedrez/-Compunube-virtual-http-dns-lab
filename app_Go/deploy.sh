@@ -28,7 +28,7 @@ echo " Iniciando despliegue en $HOST_VM ..."
 echo " Subiendo archivo ZIP a la VM..."
 
 # --- 1. Enviar el archivo ZIP a la VM ---
-scp "$ZIP_LOCAL" "$USUARIO@$HOST_VM:$RUTA_REMOTA"
+scp -o StrictHostKeyChecking=no "$ZIP_LOCAL" "$USUARIO@$HOST_VM:$RUTA_REMOTA"
 if [ $? -ne 0 ]; then
   echo " Error al copiar el archivo a la VM."
   exit 1
